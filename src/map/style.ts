@@ -15,12 +15,13 @@ export class StyleManager {
 
 		// Determine style URL: use custom if provided, otherwise use default style
 		let styleUrl: string;
-		if (tileUrls.length === 0) {
+		const firstTileUrl = tileUrls[0];
+		if (tileUrls.length === 0 || firstTileUrl === undefined) {
 			// No custom tiles configured, use default
 			styleUrl = isDark ? 'https://tiles.openfreemap.org/styles/dark' : 'https://tiles.openfreemap.org/styles/bright';
-		} else if (tileUrls.length === 1 && !this.isTileTemplateUrl(tileUrls[0])) {
+		} else if (tileUrls.length === 1 && !this.isTileTemplateUrl(firstTileUrl)) {
 			// Single URL that's not a tile template, treat as style URL
-			styleUrl = tileUrls[0];
+			styleUrl = firstTileUrl;
 		} else {
 			// Multiple URLs or tile template URLs - create custom raster style (skip to bottom)
 			styleUrl = '';

@@ -1,0 +1,75 @@
+.bases-view[data-view-type="maps-plus"] {
+	--bases-embed-border-width: 0px;
+	--bases-view-padding: 0;
+	position: relative;
+}
+
+/* Fill the leaf when opened as a full view; embeds fall back to a fixed height. */
+.workspace-leaf-content[data-type="bases"] .bases-map {
+	height: 100%;
+}
+
+.bases-map-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.bases-map {
+	width: 100%;
+	height: var(--bases-map-embed-height, 400px);
+	background-color: var(--background-primary);
+	overflow: hidden;
+	position: relative;
+	-webkit-tap-highlight-color: rgb(0, 0, 0, 0);
+}
+
+.maps-routes-and-areas-view {
+	height: 100%;
+	min-height: 420px;
+	position: relative;
+}
+
+.maps-routes-and-areas-canvas,
+.maplibregl-map {
+	height: 100%;
+	min-height: inherit;
+	position: relative;
+}
+
+.maplibregl-map {
+	font: var(--font-ui-small);
+	overflow: hidden;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.maplibregl-canvas {
+	left: 0;
+	position: absolute;
+	top: 0;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive {
+	cursor: grab;
+	user-select: none;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive:active {
+	cursor: grabbing;
+}
+
+.maplibregl-canvas.is-over-map-feature,
+.maplibregl-canvas-container.is-over-map-feature {
+	cursor: pointer;
+}
+
+.maplibregl-canvas.is-over-edit-point,
+.maplibregl-canvas-container.is-over-edit-point {
+	cursor: grab;
+}
+
+.maplibregl-canvas.is-dragging-edit-point,
+.maplibregl-canvas-container.is-dragging-edit-point {
+	cursor: grabbing;
+}

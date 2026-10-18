@@ -68,8 +68,8 @@ function parseUrl(url: string): { protocol: string; authority: string; path: str
 		throw new Error('Unable to parse URL object');
 	}
 	return {
-		protocol: parts[1],
-		authority: parts[2],
+		protocol: parts[1] || '',
+		authority: parts[2] || '',
 		path: parts[3] || '/',
 		params: parts[4] ? parts[4].split('&') : []
 	};
@@ -133,12 +133,12 @@ function normalizeSpriteURL(url: string, accessToken: string): string {
 	if (!username || !styleId) {
 		// Fallback to old behavior if path format is unexpected
 		const path = urlObject.path.split('.');
-		let properPath = path[0];
+		let properPath = path[0] || '';
 		const extension = path[1] || 'json';
 		let format = '';
 
 		if (properPath.indexOf('@2x') > -1) {
-			properPath = properPath.split('@2x')[0];
+			properPath = properPath.split('@2x')[0] || '';
 			format = '@2x';
 		}
 		urlObject.path = `/styles/v1${properPath}/sprite${format}.${extension}`;

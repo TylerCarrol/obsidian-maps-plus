@@ -8,8 +8,10 @@ import {
 	StringValue,
 	NullValue,
 	BasesAllOptions,
+	BasesViewConfig,
+	BasesOptions,
 } from 'obsidian';
-import { Map, setRTLTextPlugin } from 'maplibre-gl';
+import { Map, setRTLTextPlugin, LngLatBounds } from 'maplibre-gl';
 import type ObsidianMapsPlugin from './main';
 import { DEFAULT_MAP_HEIGHT, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from './map/constants';
 import { CustomZoomControl } from './map/controls/zoom-control';
@@ -18,11 +20,17 @@ import { BackgroundSwitcherControl } from './map/controls/background-switcher';
 import { StyleManager } from './map/style';
 import { PopupManager } from './map/popup';
 import { MarkerManager } from './map/markers';
+import { ShapeManager } from './map/shapes';
+import { AreaOverlapManager } from './map/area-overlap-manager';
+import { EditManager } from './map/edit-mode';
 import { MapConfig } from './map/types';
+import { OverlapComparator, OverlapRuleConfig, PointReductionMode } from './map/types';
 import { hasOwnProperty, coordinateFromValue, toLngLat, roundCoordinate, formatCoordinates, sameCoordinates } from './map/utils';
+import { propertyKeyFromId } from './map/frontmatter-writer';
+import { CoordinateFormat, COORDINATE_FORMAT_LABELS } from './map/coordinate-format';
 import { rtlPluginCode } from './map/rtl-plugin-code';
 
-export const MapViewType = 'map';
+export const MapViewType = 'maps-plus';
 
 /** Raw config values watched for changes. Values stay unknown; only equality matters. */
 interface ConfigSnapshot {
@@ -33,6 +41,10 @@ interface ConfigSnapshot {
 	mapHeight: unknown;
 	mapTiles: unknown;
 	mapTilesDark: unknown;
+	areaPointReductionMode: unknown;
+	areaMaxPoints: unknown;
+	routePointReductionMode: unknown;
+	routeMaxPoints: unknown;
 }
 
 export class MapView extends BasesView {
@@ -49,11 +61,15 @@ export class MapView extends BasesView {
 	private isFirstLoad = true;
 	private lastConfigSnapshot: ConfigSnapshot | null = null;
 	private lastEvaluatedCenter: [number, number] | null = null;
+	private dataUpdateVersion = 0;
 
 	// Managers
 	private styleManager: StyleManager;
 	private popupManager: PopupManager;
 	private markerManager: MarkerManager;
+	private shapeManager: ShapeManager;
+	private areaOverlapManager: AreaOverlapManager;
+	private editManager: EditManager;
 
 	// Static flag to track RTL plugin initialization
 	private static rtlPluginInitialized = false;
@@ -76,6 +92,27 @@ export class MapView extends BasesView {
 			() => this.data,
 			() => this.mapConfig,
 			(prop) => this.config.getDisplayName(prop)
+		);
+		this.shapeManager = new ShapeManager(
+			this.app,
+			this.mapEl,
+			this.popupManager,
+			(path, newLeaf) => void this.app.workspace.openLinkText(path, '', newLeaf),
+			() => this.data,
+			() => this.mapConfig,
+			(prop) => this.config.getDisplayName(prop)
+		);
+		this.areaOverlapManager = new AreaOverlapManager();
+		this.editManager = new EditManager(
+			this.app,
+			() => this.mapConfig,
+			() => this.markerManager.getMarkers(),
+			() => this.shapeManager.getShapes(),
+			() => this.markerManager.refreshGeometry(),
+			() => {
+				this.shapeManager.refreshGeometry();
+				this.updateAreaOverlap();
+			}
 		);
 	}
 
@@ -119,11 +156,7 @@ export class MapView extends BasesView {
 		const newStyle = await this.styleManager.getMapStyle(this.mapConfig.mapTiles, this.mapConfig.mapTilesDark);
 		this.map.setStyle(newStyle);
 		this.markerManager.clearLoadedIcons();
-
-		// Re-add markers after style change since setStyle removes all runtime layers
-		void this.map.once('styledata', () => {
-			void this.markerManager.updateMarkers(this.data);
-		});
+		await this.renderDataAfterStyle();
 	}
 
 	private async switchToTileSet(tileSetId: string): Promise<void> {
@@ -196,6 +229,9 @@ export class MapView extends BasesView {
 		// Set map reference in managers
 		this.popupManager.setMap(this.map);
 		this.markerManager.setMap(this.map);
+		this.shapeManager.setMap(this.map);
+		this.areaOverlapManager.setMap(this.map);
+		this.editManager.setMap(this.map);
 
 		this.map.addControl(new CustomZoomControl(), 'top-right');
 
@@ -238,9 +274,9 @@ export class MapView extends BasesView {
 				this.map.setCenter(toLngLat(configuredCenter));
 			}
 			else {
-				const bounds = this.markerManager.getBounds();
+				const bounds = this.getFeatureBounds();
 				if (bounds) {
-					this.map.setCenter(bounds.getCenter()); // Center on markers
+					this.map.setCenter(bounds.getCenter()); // Center on markers and shapes
 				}
 			}
 
@@ -249,15 +285,49 @@ export class MapView extends BasesView {
 				this.map.setZoom(this.mapConfig.defaultZoom); // Use configured zoom
 			}
 			else {
-				const bounds = this.markerManager.getBounds();
+				const bounds = this.getFeatureBounds();
 				if (bounds) {
-					this.map.fitBounds(bounds, { padding: 20 }); // Fit all markers
+					this.map.fitBounds(bounds, { padding: 20 }); // Fit all markers and shapes
 				}
 			}
 		});
 
 		// Hide tooltip on the map element.
 		this.mapEl.querySelector('canvas')?.setCssProps({ '--no-tooltip': 'true' });
+	}
+
+	private updateAreaOverlap(): void {
+		if (this.mapConfig) {
+			this.areaOverlapManager.update(this.shapeManager.getShapes(), this.mapConfig);
+		}
+	}
+
+	private async renderDataAfterStyle(): Promise<void> {
+		const map = this.map;
+		if (!map || !this.mapConfig || !this.data) return;
+
+		if (!map.isStyleLoaded()) {
+			await new Promise<void>(resolve => {
+				void map.once('idle', () => {
+					resolve();
+				});
+			});
+		}
+		if (!this.map || !this.mapConfig) return;
+
+		// setStyle removes runtime sources and layers, so recreate all data layers
+		// only after the replacement style is ready.
+		this.shapeManager.updateShapes(this.data);
+		this.updateAreaOverlap();
+		await this.markerManager.updateMarkers(this.data);
+		this.editManager.update();
+
+		if (this.pendingMapState && this.map) {
+			const { center, zoom } = this.pendingMapState;
+			if (center) this.map.setCenter(center);
+			if (zoom !== null && zoom !== undefined) this.map.setZoom(zoom);
+			this.pendingMapState = null;
+		}
 	}
 
 	private destroyMap(): void {
@@ -267,10 +337,14 @@ export class MapView extends BasesView {
 			this.map = null;
 		}
 		this.markerManager.setMap(null);
+		this.shapeManager.setMap(null);
+		this.areaOverlapManager.setMap(null);
+		this.editManager.setMap(null);
 	}
 
 	public onDataUpdated(): void {
 		this.containerEl.removeClass('is-loading');
+		const updateVersion = ++this.dataUpdateVersion;
 
 		const configSnapshot = this.getConfigSnapshot();
 		const configChanged = JSON.stringify(this.lastConfigSnapshot) !== JSON.stringify(configSnapshot);
@@ -282,12 +356,15 @@ export class MapView extends BasesView {
 		const centerChanged = !sameCoordinates(this.mapConfig.center, this.lastEvaluatedCenter);
 
 		void this.initializeMap().then(async () => {
+			if (updateVersion !== this.dataUpdateVersion) return;
+
 			// Apply config to map on first load or when config changes
 			if (configChanged) {
 				await this.applyConfigToMap(this.lastConfigSnapshot, configSnapshot);
 				this.lastConfigSnapshot = configSnapshot;
 				this.isFirstLoad = false;
 			}
+			if (updateVersion !== this.dataUpdateVersion) return;
 			// Update center when the evaluated center coordinates change
 			// (e.g., due to formula re-evaluation when active file changes)
 			// But skip if we're restoring ephemeral state
@@ -295,21 +372,8 @@ export class MapView extends BasesView {
 				this.updateCenter();
 			}
 
-			if (this.map && this.data) {
-				await this.markerManager.updateMarkers(this.data);
-
-				// Apply pending map state if available (for restoring ephemeral state)
-				if (this.pendingMapState && this.map) {
-					const { center, zoom } = this.pendingMapState;
-					if (center) {
-						this.map.setCenter(center);
-					}
-					if (zoom !== null && zoom !== undefined) {
-						this.map.setZoom(zoom);
-					}
-					this.pendingMapState = null;
-				}
-			}
+			await this.renderDataAfterStyle();
+			if (updateVersion !== this.dataUpdateVersion) return;
 
 			// Track state for next comparison
 			if (this.mapConfig) {
@@ -322,6 +386,20 @@ export class MapView extends BasesView {
 	/** A zoom of 0 is valid, so this tests for presence rather than truthiness. */
 	private hasConfiguredZoom(): boolean {
 		return Number.isNumber(this.config.get('defaultZoom'));
+	}
+
+	/** Bounds covering every rendered feature, or null when nothing is rendered. */
+	private getFeatureBounds(): LngLatBounds | null {
+		const featureBounds = [this.markerManager.getBounds(), this.shapeManager.getBounds()]
+			.filter((bounds): bounds is LngLatBounds => bounds != null && !bounds.isEmpty());
+		if (featureBounds.length === 0) return null;
+
+		const combined = new LngLatBounds();
+		for (const bounds of featureBounds) {
+			combined.extend(bounds);
+		}
+
+		return combined;
 	}
 
 	private updateZoom(): void {
@@ -424,6 +502,20 @@ export class MapView extends BasesView {
 		const coordinatesProp = this.config.getAsPropertyId('coordinates');
 		const markerIconProp = this.config.getAsPropertyId('markerIcon');
 		const markerColorProp = this.config.getAsPropertyId('markerColor');
+		const areaCoordinatesProp = this.config.getAsPropertyId('areaCoordinates');
+		const areaFillColorProp = this.config.getAsPropertyId('areaFillColor');
+		const areaStrokeColorProp = this.config.getAsPropertyId('areaStrokeColor');
+		const overlapLayerCount = this.getNumericConfig('overlapLayerCount', 0, 0, 8);
+		const overlapRuleCount = this.getNumericConfig('overlapRuleCount', 0, 0, 12);
+		const overlapLayerProps = Array.from({ length: overlapLayerCount }, (_, index) =>
+			this.config.getAsPropertyId(`overlapLayer${index + 1}`));
+		const overlapRules = this.loadOverlapRules(overlapRuleCount);
+		const routeCoordinatesProp = this.config.getAsPropertyId('routeCoordinates');
+		const routeColorProp = this.config.getAsPropertyId('routeColor');
+		const areaPointReductionMode = this.getPointReductionMode('areaPointReductionMode');
+		const areaMaxPoints = this.getNumericConfig('areaMaxPoints', 1000, 3, 1000000);
+		const routePointReductionMode = this.getPointReductionMode('routePointReductionMode');
+		const routeMaxPoints = this.getNumericConfig('routeMaxPoints', 1000, 2, 1000000);
 
 		// Load numeric configurations with validation
 		const minZoom = this.getNumericConfig('minZoom', 0, 0, 24);
@@ -457,13 +549,20 @@ export class MapView extends BasesView {
 			const tileSet = currentTileSetId
 				? this.plugin.settings.tileSets.find(ts => ts.id === currentTileSetId)
 				: null;
-			const selectedTileSet = tileSet || this.plugin.settings.tileSets[0];
+			const selectedTileSet = tileSet ?? this.plugin.settings.tileSets[0];
 
-			selectedTileSetId = selectedTileSet.id;
-			mapTiles = selectedTileSet.lightTiles ? [selectedTileSet.lightTiles] : [];
-			mapTilesDark = selectedTileSet.darkTiles
-				? [selectedTileSet.darkTiles]
-				: (selectedTileSet.lightTiles ? [selectedTileSet.lightTiles] : []);
+			if (!selectedTileSet) {
+				// Should be unreachable given the length check above, but keeps TS happy
+				mapTiles = [];
+				mapTilesDark = [];
+				selectedTileSetId = null;
+			} else {
+				selectedTileSetId = selectedTileSet.id;
+				mapTiles = selectedTileSet.lightTiles ? [selectedTileSet.lightTiles] : [];
+				mapTilesDark = selectedTileSet.darkTiles
+					? [selectedTileSet.darkTiles]
+					: (selectedTileSet.lightTiles ? [selectedTileSet.lightTiles] : []);
+			}
 		} else {
 			// No tiles configured, will fall back to default style
 			mapTiles = [];
@@ -475,6 +574,19 @@ export class MapView extends BasesView {
 			coordinatesProp,
 			markerIconProp,
 			markerColorProp,
+			areaCoordinatesProp,
+			areaFillColorProp,
+			areaStrokeColorProp,
+			overlapLayerCount,
+			overlapRuleCount,
+			overlapLayerProps,
+			overlapRules,
+			routeCoordinatesProp,
+			routeColorProp,
+			areaPointReductionMode,
+			areaMaxPoints,
+			routePointReductionMode,
+			routeMaxPoints,
 			mapHeight,
 			defaultZoom,
 			center,
@@ -483,14 +595,59 @@ export class MapView extends BasesView {
 			mapTiles,
 			mapTilesDark,
 			currentTileSetId: selectedTileSetId,
+			editModeEnabled: this.getBooleanConfig('editMode', false),
+			coordinateSaveFormat: this.getCoordinateFormatConfig(),
+			snapToPointsEnabled: this.getBooleanConfig('snapToPoints', true),
 		};
+	}
+
+	private getBooleanConfig(key: string, defaultValue: boolean): boolean {
+		const value = this.config.get(key);
+		return typeof value === 'boolean' ? value : defaultValue;
+	}
+
+	private getPointReductionMode(key: string): PointReductionMode {
+		const value = this.config.get(key);
+		return value === 'fixed' ? value : 'none';
+	}
+
+	private loadOverlapRules(count: number): OverlapRuleConfig[] {
+		return Array.from({ length: count }, (_, index) => ({
+			type: 'layerOverlapCount',
+			comparator: this.getComparatorConfig(`overlapRule${index + 1}Comparator`),
+			count: this.getNumericConfig(`overlapRule${index + 1}Count`, 0, 0, 8),
+			color: this.getStringConfig(`overlapRule${index + 1}Color`, '#48a868'),
+			fillOpacity: this.getNumericConfig(`overlapRule${index + 1}Opacity`, 0.5, 0, 1),
+		}));
+	}
+
+	private getComparatorConfig(key: string): OverlapComparator {
+		const value = this.config.get(key);
+		return value === '!=' || value === '<' || value === '>' || value === '<=' || value === '>='
+			? value
+			: '==';
+	}
+
+	private getStringConfig(key: string, defaultValue: string): string {
+		const value = this.config.get(key);
+		return typeof value === 'string' && value.trim().length > 0 ? value.trim() : defaultValue;
+	}
+
+	private getCoordinateFormatConfig(): CoordinateFormat {
+		const value = this.config.get('coordinateSaveFormat');
+		return typeof value === 'string' && value in COORDINATE_FORMAT_LABELS ? value as CoordinateFormat : 'same';
 	}
 
 	private getNumericConfig(key: string, defaultValue: number, min: number, max: number): number {
 		const value = this.config.get(key);
-		if (value == null || typeof value !== 'number') return defaultValue;
+		const numericValue = typeof value === 'number'
+			? value
+			: typeof value === 'string' && value.trim().length > 0
+				? Number(value)
+				: NaN;
+		if (!Number.isFinite(numericValue)) return defaultValue;
 
-		return Math.min(max, Math.max(min, value));
+		return Math.min(max, Math.max(min, numericValue));
 	}
 
 	private getArrayConfig(key: string): string[] {
@@ -540,11 +697,17 @@ export class MapView extends BasesView {
 			mapHeight: this.config.get('mapHeight'),
 			mapTiles: this.config.get('mapTiles'),
 			mapTilesDark: this.config.get('mapTilesDark'),
+			areaPointReductionMode: this.config.get('areaPointReductionMode'),
+			areaMaxPoints: this.config.get('areaMaxPoints'),
+			routePointReductionMode: this.config.get('routePointReductionMode'),
+			routeMaxPoints: this.config.get('routeMaxPoints'),
 		};
 	}
 
 	private showMapContextMenu(evt: MouseEvent): void {
 		if (!this.map || !this.mapConfig) return;
+		// A right-click on an edit-mode point gets its own "Delete point" menu instead
+		if (this.editManager.tryHandleContextMenu(evt)) return;
 
 		const currentZoom = Math.round(this.map.getZoom() * 10) / 10; // Round to 1 decimal place
 
@@ -563,10 +726,7 @@ export class MapView extends BasesView {
 				void this.createFileForView('', (frontmatter: Record<string, unknown>) => {
 					// Pre-fill coordinates if a coordinates property is configured
 					if (this.mapConfig?.coordinatesProp) {
-						// Remove 'note.' prefix if present
-						const propertyKey = this.mapConfig.coordinatesProp.startsWith('note.')
-							? this.mapConfig.coordinatesProp.slice(5)
-							: this.mapConfig.coordinatesProp;
+						const propertyKey = propertyKeyFromId(this.mapConfig.coordinatesProp);
 						frontmatter[propertyKey] = [currentLat.toString(), currentLng.toString()];
 					}
 				});
@@ -645,7 +805,85 @@ export class MapView extends BasesView {
 		};
 	}
 
-	static getViewOptions(): BasesAllOptions[] {
+	static getViewOptions(config: BasesViewConfig): BasesAllOptions[] {
+		const overlapOptions: BasesOptions[] = [
+			{
+				displayName: 'Number of layers',
+				type: 'slider',
+				key: 'overlapLayerCount',
+				min: 0,
+				max: 8,
+				step: 1,
+				default: 0,
+				instant: true,
+			},
+		];
+		for (let index = 1; index <= 8; index++) {
+			overlapOptions.push({
+				displayName: `Layer ${index}${index === 1 ? ' (target areas)' : ' (counted areas)'}`,
+				type: 'property',
+				key: `overlapLayer${index}`,
+				filter: prop => !prop.startsWith('file.'),
+				placeholder: 'Formula or property',
+				shouldHide: () => index > MapView.getViewOptionCount(config, 'overlapLayerCount', 8),
+			});
+		}
+		overlapOptions.push({
+			displayName: 'Number of rules',
+			type: 'slider',
+			key: 'overlapRuleCount',
+			min: 0,
+			max: 12,
+			step: 1,
+			default: 0,
+			instant: true,
+		});
+		for (let index = 1; index <= 12; index++) {
+			const ruleIsHidden = () => index > MapView.getViewOptionCount(config, 'overlapRuleCount', 12);
+			overlapOptions.push({
+				displayName: `Rule ${index} type`,
+				type: 'dropdown',
+				key: `overlapRule${index}Type`,
+				options: { layerOverlapCount: 'Layer overlap count' },
+				default: 'layerOverlapCount',
+				shouldHide: ruleIsHidden,
+			});
+			overlapOptions.push({
+				displayName: `Rule ${index} comparison`,
+				type: 'dropdown',
+				key: `overlapRule${index}Comparator`,
+				options: { '==': '==', '!=': '!=', '<': '<', '>': '>', '<=': '<=', '>=': '>=' },
+				default: '==',
+				shouldHide: ruleIsHidden,
+			});
+			overlapOptions.push({
+				displayName: `Rule ${index} layer count`,
+				type: 'text',
+				key: `overlapRule${index}Count`,
+				default: '0',
+				placeholder: 'Number of layers',
+				shouldHide: ruleIsHidden,
+			});
+			overlapOptions.push({
+				displayName: `Rule ${index} color`,
+				type: 'text',
+				key: `overlapRule${index}Color`,
+				default: '#48a868',
+				placeholder: 'CSS color, for example #48a868',
+				shouldHide: ruleIsHidden,
+			});
+			overlapOptions.push({
+				displayName: `Rule ${index} opacity`,
+				type: 'slider',
+				key: `overlapRule${index}Opacity`,
+				min: 0,
+				max: 1,
+				step: 0.05,
+				default: 0.5,
+				shouldHide: ruleIsHidden,
+			});
+		}
+
 		return [
 			{
 				displayName: 'Embedded height',
@@ -724,6 +962,92 @@ export class MapView extends BasesView {
 				]
 			},
 			{
+				displayName: 'Areas',
+				type: 'group',
+				items: [
+					{
+						displayName: 'Area coordinates',
+						type: 'property',
+						key: 'areaCoordinates',
+						filter: prop => !prop.startsWith('file.'),
+						placeholder: 'Property',
+					},
+					{
+						displayName: 'Area fill color',
+						type: 'property',
+						key: 'areaFillColor',
+						filter: prop => !prop.startsWith('file.'),
+						placeholder: 'Property',
+					},
+					{
+						displayName: 'Area stroke color',
+						type: 'property',
+						key: 'areaStrokeColor',
+						filter: prop => !prop.startsWith('file.'),
+						placeholder: 'Property',
+					},
+					{
+						displayName: 'Point reduction',
+						type: 'dropdown',
+						key: 'areaPointReductionMode',
+						options: {
+							none: 'None',
+							fixed: 'Fixed maximum',
+						},
+						default: 'none',
+					},
+					{
+						displayName: 'Maximum points per ring',
+						type: 'text',
+						key: 'areaMaxPoints',
+						default: '1000',
+						placeholder: 'Number of points',
+					},
+				]
+			},
+			{
+				displayName: 'Overlaps',
+				type: 'group',
+				items: overlapOptions,
+			},
+			{
+				displayName: 'Routes',
+				type: 'group',
+				items: [
+					{
+						displayName: 'Route coordinates',
+						type: 'property',
+						key: 'routeCoordinates',
+						filter: prop => !prop.startsWith('file.'),
+						placeholder: 'Property',
+					},
+					{
+						displayName: 'Route color',
+						type: 'property',
+						key: 'routeColor',
+						filter: prop => !prop.startsWith('file.'),
+						placeholder: 'Property',
+					},
+					{
+						displayName: 'Point reduction',
+						type: 'dropdown',
+						key: 'routePointReductionMode',
+						options: {
+							none: 'None',
+							fixed: 'Fixed maximum',
+						},
+						default: 'none',
+					},
+					{
+						displayName: 'Maximum points per segment',
+						type: 'text',
+						key: 'routeMaxPoints',
+						default: '1000',
+						placeholder: 'Number of points',
+					},
+				]
+			},
+			{
 				displayName: 'Background',
 				type: 'group',
 				items: [
@@ -739,6 +1063,41 @@ export class MapView extends BasesView {
 					},
 				]
 			},
+			{
+				displayName: 'Edit mode',
+				type: 'group',
+				items: [
+					{
+						displayName: 'Edit mode',
+						type: 'toggle',
+						key: 'editMode',
+						default: false,
+					},
+					{
+						displayName: 'Save coordinates as',
+						type: 'dropdown',
+						key: 'coordinateSaveFormat',
+						options: COORDINATE_FORMAT_LABELS,
+						default: 'same',
+					},
+					{
+						displayName: 'Snap to points',
+						type: 'toggle',
+						key: 'snapToPoints',
+						default: true,
+					},
+				]
+			},
 		];
+	}
+
+	private static getViewOptionCount(config: BasesViewConfig, key: string, max: number): number {
+		const value = config.get(key);
+		const numericValue = typeof value === 'number'
+			? value
+			: typeof value === 'string' && value.trim().length > 0
+				? Number(value)
+				: NaN;
+		return Number.isFinite(numericValue) ? Math.min(max, Math.max(0, numericValue)) : 0;
 	}
 }

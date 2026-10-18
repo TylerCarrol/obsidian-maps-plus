@@ -3,6 +3,7 @@ import { Map as MapLibreMap, LngLatBounds, GeoJSONSource, MapLayerMouseEvent } f
 import type { Feature } from 'geojson';
 import { MapConfig, MapMarker, MapMarkerProperties } from './types';
 import { coordinateFromValue, formatCoordinates, toLngLat } from './utils';
+import { clearResolvedColors, resolveCssColor } from './color';
 import { PopupManager } from './popup';
 
 const DEFAULT_MARKER_COLOR = 'var(--bases-map-marker-background)';
@@ -20,8 +21,6 @@ export class MarkerManager {
 	private markers: MapMarker[] = [];
 	private bounds: LngLatBounds | null = null;
 	private loadedIcons: Set<string> = new Set();
-	// Resolved CSS colors, cleared alongside the icons when the theme changes
-	private resolvedColors: Map<string, string> = new Map();
 	// Interactions are layer-scoped and survive setStyle, so they bind only once
 	private interactionsBound = false;
 	private popupManager: PopupManager;
@@ -58,9 +57,24 @@ export class MarkerManager {
 		return this.bounds;
 	}
 
+	getMarkers(): MapMarker[] {
+		return this.markers;
+	}
+
+	/** Re-renders the current markers without re-reading them from the query results, for live drag feedback. */
+	refreshGeometry(): void {
+		const source = this.map?.getSource<GeoJSONSource>('markers');
+		if (!source) return;
+
+		source.setData({
+			type: 'FeatureCollection',
+			features: this.createGeoJSONFeatures(this.markers),
+		});
+	}
+
 	clearLoadedIcons(): void {
 		this.loadedIcons.clear();
-		this.resolvedColors.clear();
+		clearResolvedColors();
 	}
 
 	async updateMarkers(data: { data: BasesEntry[] }): Promise<void> {
@@ -202,29 +216,10 @@ export class MarkerManager {
 		return `marker-${icon || 'dot'}-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
 	}
 
-	private resolveColor(color: string): string {
-		// getComputedStyle forces a style recalculation, so cache per theme
-		const cached = this.resolvedColors.get(color);
-		if (cached !== undefined) return cached;
-
-		// Create a temporary hidden element to resolve CSS variables
-		const tempEl = document.body.createDiv('bases-map-color-probe');
-		tempEl.setCssStyles({ color });
-
-		// Get the computed color value
-		const computedColor = getComputedStyle(tempEl).color;
-
-		// Clean up
-		tempEl.remove();
-
-		this.resolvedColors.set(color, computedColor);
-		return computedColor;
-	}
-
 	private async createCompositeMarkerImage(icon: string | null, color: string): Promise<HTMLImageElement> {
 		// Resolve CSS variables to actual color values
-		const resolvedColor = this.resolveColor(color);
-		const resolvedIconColor = this.resolveColor('var(--bases-map-marker-icon-color)');
+		const resolvedColor = resolveCssColor(color);
+		const resolvedIconColor = resolveCssColor('var(--bases-map-marker-icon-color)');
 
 		// Create a high-resolution canvas for crisp rendering on retina displays
 		const scale = 4; // 4x resolution for crisp display

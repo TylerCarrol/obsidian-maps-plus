@@ -18,7 +18,7 @@ export function coordinateFromValue(value: Value | null): [number, number] | nul
 	else if (value instanceof StringValue) {
 		// Split by comma and handle various spacing
 		const parts = value.toString().trim().split(',');
-		if (parts.length >= 2) {
+		if (parts.length >= 2 && parts[0] !== undefined && parts[1] !== undefined) {
 			lat = parseCoordinate(parts[0].trim());
 			lng = parseCoordinate(parts[1].trim());
 		}

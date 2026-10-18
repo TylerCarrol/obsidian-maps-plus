@@ -4,16 +4,16 @@ import { MapSettings, DEFAULT_SETTINGS, MapSettingTab } from './settings';
 import { GEOLOCATION_OPTIONS, geolocationErrorMessage } from './map/utils';
 
 export default class ObsidianMapsPlugin extends Plugin {
-	settings: MapSettings;
+	settings!: MapSettings;
 
 	async onload() {
 		await this.loadSettings();
 
-		this.registerBasesView('map', {
-			name: 'Map',
+		this.registerBasesView('maps-plus', {
+			name: 'Maps+',
 			icon: 'lucide-map',
 			factory: (controller, containerEl) => new MapView(controller, containerEl, this),
-			options: () => MapView.getViewOptions(),
+			options: config => MapView.getViewOptions(config),
 		});
 
 		// Only registered on mobile, since desktop has no location provider

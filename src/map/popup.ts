@@ -140,6 +140,9 @@ export class PopupManager {
 		// Use first property as title (still acts as a link to the file)
 		if (propertiesWithValues.length > 0) {
 			const firstProperty = propertiesWithValues[0];
+			if (!firstProperty) {
+				return containerEl;
+			}
 			const titleEl = containerEl.createDiv('bases-map-popup-title');
 
 			// Create a clickable link that opens the file

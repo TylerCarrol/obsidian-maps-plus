@@ -25,10 +25,18 @@ export default defineConfig(
 			},
 			parserOptions: {
 				projectService: {
+					maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
 					allowDefaultProject: [
 						'eslint.config.mts',
 						'manifest.json',
 						'scripts/generate-earth-map.mjs',
+						'scripts/generate-countries.mjs',
+						'scripts/generate-areas.mjs',
+						'scripts/generate-tdsb-school-catchments.mjs',
+						'scripts/generate-subway-walksheds.mjs',
+						'scripts/generate-rtl-plugin.mjs',
+						'src/utils/*.test.ts',
+						'src/map/*.test.ts',
 						'src/__tests__/*.ts',
 					],
 				},
@@ -55,12 +63,13 @@ export default defineConfig(
 			'no-restricted-globals': 'off',
 			'obsidianmd/no-nodejs-modules': 'off',
 			'obsidianmd/rule-custom-message': 'off',
+			'obsidianmd/prefer-window-timers': 'off',
 		},
 	},
 	// Test and mock files are not Obsidian plugin code — disable plugin-specific
 	// rules that only apply to the production plugin source.
 	{
-		files: ['src/__tests__/**', 'src/__mocks__/**'],
+		files: ['src/**/*.test.ts', 'src/__tests__/**', 'src/__mocks__/**'],
 		rules: {
 			'obsidianmd/prefer-create-el': 'off',
 			'obsidianmd/ui/sentence-case': 'off',
