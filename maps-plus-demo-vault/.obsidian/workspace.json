@@ -1,0 +1,235 @@
+{
+  "main": {
+    "id": "5d2a5a038c03a6df",
+    "type": "split",
+    "children": [
+      {
+        "id": "7d61578a1353b6b0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dd0a61c007748465",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "bases",
+              "state": {
+                "file": "Maps.base",
+                "viewName": "Overlaps"
+              },
+              "pinned": true,
+              "icon": "lucide-map",
+              "title": "Maps"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "300ba4d7ab10e46a",
+    "type": "split",
+    "children": [
+      {
+        "id": "5595a2164ed41b59",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4173ecbcae2989d4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "803368fee31412cb",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          },
+          {
+            "id": "b682a0584911532a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "2f3ee05147daf762",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "0fc257381cd5a1cc",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "bc9d0a8a826ae6fa",
+    "type": "split",
+    "children": [
+      {
+        "id": "86fcf68506cfaf5f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e02f7059d8db4bce",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {
+                "file": "Maps.base"
+              },
+              "icon": "lucide-info",
+              "title": "File properties"
+            }
+          },
+          {
+            "id": "e94cf0150bb1fe23",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Maps.base",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "740f98401000f31f",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Maps.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "88e9e46d7db8811c",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Maps.base",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "graph:Open graph view": false,
+      "switcher:Open quick switcher": false,
+      "canvas:Create new canvas": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "random-note:Open random note": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "dd0a61c007748465",
+  "lastOpenFiles": [
+    "Overlaps/Area 3.md",
+    "Overlaps/Area 4.md",
+    "Overlaps/Area 2c.md",
+    "Overlaps/Area 2b.md",
+    "Overlaps/Area 2a.md",
+    "Overlaps/Area 1.md",
+    "Maps.base",
+    "Examples/Conservatory of Flowers.md",
+    "Maps.md",
+    "Overlaps",
+    "overlap-demo/Walkshed 3.md",
+    "overlap-demo/Housing Area.md",
+    "overlap-demo/Walkshed 2.md",
+    "overlap-demo/Walkshed 1.md",
+    "overlap-demo/Catchment.md",
+    "overlap-demo/Another Condition.md",
+    "overlap-demo",
+    "Countries/San Marino.md",
+    "Countries/Vatican City.md",
+    "Countries/Hong Kong.md",
+    "Examples/Musée d'Orsay.md",
+    "Examples/Random Route.md",
+    "Examples/San Francisco Bay Islands.md",
+    "Examples/Museums.md",
+    "Examples/Jardin des Plantes.md",
+    "Examples/Golden Gate Park.md",
+    "Examples/Eiffel Tower.md",
+    "Examples/Centre Pompidou.md"
+  ]
+}

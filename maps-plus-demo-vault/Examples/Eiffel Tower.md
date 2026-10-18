@@ -1,0 +1,15 @@
+---
+tags:
+  - Example
+categories:
+  - "[[Maps]]"
+type:
+  - "[[Landmarks]]"
+address: Av. Gustave Eiffel, 75007 Paris, France
+coordinates:
+  - "48.85837"
+  - "2.294481"
+architect: "[[Gustave Eiffel]]"
+color: red
+icon: landmark
+---

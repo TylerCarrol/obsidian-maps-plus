@@ -1,0 +1,121 @@
+formulas:
+  Gray: '"Gray"'
+  Overlap1: overlapLayer1 == true
+  Overlap2: overlapLayer2 == true
+  Overlap3: overlapLayer3 == true
+  Overlap4: overlapLayer4 == true
+properties:
+  file.name:
+    displayName: Place
+  note.coordinates:
+    displayName: Marker coordinates
+  note.area:
+    displayName: Area coordinates
+  note.route:
+    displayName: Route coordinates
+  note.overlapLayer1:
+    displayName: Overlap layer 1 eligibility
+  note.overlapLayer2:
+    displayName: Overlap layer 2 eligibility
+views:
+  - type: maps-plus
+    name: Examples
+    filters:
+      and:
+        - file.inFolder("examples")
+    order:
+      - file.name
+    coordinates: note.coordinates
+    markerColor: note.markerColor
+    areaCoordinates: note.area
+    areaFillColor: note.areaFillColor
+    areaStrokeColor: note.areaStrokeColor
+    routeCoordinates: note.route
+    routeColor: note.routeColor
+    defaultZoom: 14.1
+    editMode: true
+    coordinateSaveFormat: commaPairs
+    mapHeight: 800
+    markerIcon: note.icon
+    center: "[37.77476, -122.47784]"
+  - type: maps-plus
+    name: Overlaps
+    filters:
+      and:
+        - file.hasTag("Overlap")
+    order:
+      - file.name
+      - formula.Overlap1
+      - formula.Overlap2
+      - formula.Overlap3
+      - formula.Overlap4
+    areaCoordinates: note.area
+    overlapLayerCount: 4
+    overlapLayer1: formula.Overlap1
+    overlapLayer2: formula.Overlap2
+    overlapRuleCount: 4
+    overlapRule1Type: layerOverlapCount
+    overlapRule1Comparator: ">="
+    overlapRule1Count: "3"
+    overlapRule1Color: "#48a868"
+    overlapRule1Opacity: 0.5
+    overlapRule2Type: layerOverlapCount
+    overlapRule2Comparator: ==
+    overlapRule2Count: "2"
+    overlapRule2Color: "#d9a441"
+    overlapRule2Opacity: 0.5
+    defaultZoom: 11.4
+    editMode: false
+    coordinateSaveFormat: commaPairs
+    mapHeight: 500
+    center: "[42.98651, -78.97444]"
+    overlapLayer3: formula.Overlap3
+    overlapRule3Color: "#0000ff"
+    areaFillColor: formula.Gray
+    areaStrokeColor: formula.Gray
+    overlapRule3Comparator: ==
+    overlapLayer4: formula.Overlap4
+    overlapRule3Count: "1"
+    overlapRule4Color: "#ff0000"
+    overlapRule3Opacity: 0.5
+    overlapRule4Opacity: 0.5
+  - type: maps-plus
+    name: Countries
+    filters:
+      and:
+        - file.hasTag("Place/Country")
+    order:
+      - file.name
+    coordinates: note.coordinates
+    markerColor: note.markerColor
+    areaCoordinates: note.area
+    areaFillColor: note.areaFillColor
+    areaStrokeColor: note.areaStrokeColor
+    routeCoordinates: note.route
+    routeColor: note.routeColor
+    defaultZoom: 2
+    editMode: false
+    coordinateSaveFormat: commaPairs
+    mapHeight: 800
+    areaMaxPoints: "100"
+    areaPointReductionMode: none
+  - type: maps-plus
+    name: Countries (Point Reduction)
+    filters:
+      and:
+        - file.hasTag("Place/Country")
+    order:
+      - file.name
+    coordinates: note.coordinates
+    markerColor: note.markerColor
+    areaCoordinates: note.area
+    areaFillColor: note.areaFillColor
+    areaStrokeColor: note.areaStrokeColor
+    routeCoordinates: note.route
+    routeColor: note.routeColor
+    defaultZoom: 2
+    editMode: false
+    coordinateSaveFormat: commaPairs
+    mapHeight: 800
+    areaMaxPoints: "100"
+    areaPointReductionMode: fixed
