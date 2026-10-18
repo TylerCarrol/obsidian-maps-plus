@@ -9,6 +9,35 @@
 
 Adds a Bases map view for Obsidian that can render point markers, polygon areas, and routes.
 
+
+## Examples
+
+###### Countries
+> Can render *many* points at once (this image has **>500k** points)
+
+![](./images/example-areas-countries.png)
+
+###### Areas & Routes
+> Can render areas, routes and points all at the same time
+
+![](./images/example-areas-and-routes.png)
+
+###### Edit Mode
+> Can switch to edit mode, to drag-and-drop points (with *optional* snap-to-point mode as well)
+
+![](./images/example-areas-and-routes-edit-mode.png)
+
+###### Overlaps
+> Can use *multiple* **overlapping** areas to color *different* colors for **classification**
+
+![](./images/examples-overlaps.png)
+
+###### Point Reduction
+> Can limit points per object to make rendering *quicker* (this image is limited to **1k** points per country)
+
+![](./images/example-areas-countries-point-reduction.png)
+
+---
 ## Why this is a separate view
 
 Obsidian's official **Maps** plugin does not currently expose a public extension API for adding extra geometry types to its built-in view. This plugin therefore registers a companion Bases view named **Maps+** that follows the same workflow while adding polygon and route support.
