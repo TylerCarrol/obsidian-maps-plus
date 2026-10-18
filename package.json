@@ -40,7 +40,7 @@
 	},
 	"dependencies": {
 		"@mapbox/mapbox-gl-rtl-text": "^0.4.0",
-		"maplibre-gl": "^5.24.0",
+		"maplibre-gl": "^6.4.1",
 		"polygon-clipping": "^0.15.7"
 	}
 }
