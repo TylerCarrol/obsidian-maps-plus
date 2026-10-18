@@ -40,7 +40,7 @@ export default defineConfig(
 	...obsidianmd.configs.recommended,
 	{
 		rules: {
-			'obsidianmd/ui/sentence-case': ['warn', { ignoreRegex: ['^{{RENAME}} Preview$'] }],
+			'obsidianmd/ui/sentence-case': ['warn', { ignoreRegex: ['^Maps+ Preview$'] }],
 		},
 	},
 	// Repository generators run under Node and are not bundled into the plugin.

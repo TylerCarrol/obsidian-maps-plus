@@ -1,4 +1,15 @@
-# Obsidian community plugin
+# Maps+ for Obsidian Bases
+
+Adds a map layout to [Obsidian Bases](https://help.obsidian.md/bases) so you can display notes as an interactive map view.
+
+- Dynamically display markers that match your filters.
+- Use marker icons and colors defined by properties.
+- Load custom background tiles.
+- Define default zoom options.
+- Create routes
+- Create areas, with optional multi polygons
+
+## Conventions
 
 > **Before making any change, read [`CONVENTIONS.md`](./CONVENTIONS.md).** It describes the project-specific design rules, the configurable-property requirement, the SVG ID uniqueness requirement, the shape system, and other guidance that applies on top of the general instructions below.
 

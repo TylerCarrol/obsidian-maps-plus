@@ -1,10 +1,10 @@
-# {{RENAME}} Plugin for Obsidian
+# Maps+ Plugin for Obsidian
 
-[![GitHub Release](https://img.shields.io/github/v/release/TylerCarrol/obsidian-{{RENAME}}?logo=github&sort=semver)](https://github.com/TylerCarrol/obsidian-{{RENAME}}/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/TylerCarrol/obsidian-{{RENAME}}/blob/main/LICENSE)
-[![Lint](https://github.com/TylerCarrol/obsidian-{{RENAME}}/actions/workflows/lint.yml/badge.svg)](https://github.com/TylerCarrol/obsidian-{{RENAME}}/actions/workflows/lint.yml)
-[![Test](https://github.com/TylerCarrol/obsidian-{{RENAME}}/actions/workflows/test.yml/badge.svg)](https://github.com/TylerCarrol/obsidian-{{RENAME}}/actions/workflows/test.yml)
-[![Scc Count Badge](https://sloc.xyz/github/TylerCarrol/obsidian-{{RENAME}}?category=code)](https://github.com/TylerCarrol/obsidian-{{RENAME}}?category=code)
+[![GitHub Release](https://img.shields.io/github/v/release/TylerCarrol/obsidian-maps-plus?logo=github&sort=semver)](https://github.com/TylerCarrol/obsidian-maps-plus/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/TylerCarrol/obsidian-maps-plus/blob/main/LICENSE)
+[![Lint](https://github.com/TylerCarrol/obsidian-maps-plus/actions/workflows/lint.yml/badge.svg)](https://github.com/TylerCarrol/obsidian-maps-plus/actions/workflows/lint.yml)
+[![Test](https://github.com/TylerCarrol/obsidian-maps-plus/actions/workflows/test.yml/badge.svg)](https://github.com/TylerCarrol/obsidian-maps-plus/actions/workflows/test.yml)
+[![Scc Count Badge](https://sloc.xyz/github/TylerCarrol/obsidian-maps-plus?category=code)](https://github.com/TylerCarrol/obsidian-maps-plus?category=code)
 [![BuyMeACoffee](https://raw.githubusercontent.com/pachadotdev/buymeacoffee-badges/main/bmc-yellow.svg)](https://buymeacoffee.com/tylercarrol)
 
 ## Install for development
@@ -19,27 +19,17 @@
    ```
 3. Copy `main.js`, `manifest.json`, and `styles.css` to:
    ```text
-   <Vault>/.obsidian/plugins/{{RENAME}}/
+  <Vault>/.obsidian/plugins/maps-plus/
    ```
-4. In Obsidian, enable **Settings → Community plugins → {{RENAME}}**.
-
-For watch mode during development:
-
-```bash
-npm run dev
-```
+4. In Obsidian, enable **Settings → Community plugins → Maps+**.
 
 ## Fastest way to try it
 
-This repository includes a ready-made demo vault in `/{{RENAME}}-demo-vault`.
+This repository includes a ready-made demo vault in `/maps-plus-demo-vault`.
 
-- Windows/PowerShell:
-  ```powershell
-  .\scripts\build-to-demo-vault.ps1
-  ```
-- Any platform:
-  1. Run `npm run build`
-  2. Copy `main.js`, `manifest.json`, and `styles.css` to `{{RENAME}}-demo-vault/.obsidian/plugins/{{RENAME}}/`
-  3. Open `{{RENAME}}-demo-vault` in Obsidian
+1. Run `npm run build`
+2. Copy `main.js`, `manifest.json`, and `styles.css` to `maps-plus/.obsidian/plugins/maps-plus/`
+3. Open `maps-plus` in Obsidian
+4. Open `maps-plus/Maps.base`
 
-See `{{RENAME}}-demo-vault/README.md` for a guided walkthrough.
+See `maps-plus/README.md` for the included example notes.

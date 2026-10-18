@@ -1,9 +1,9 @@
 {
-	"id": "{{RENAME}}",
-	"name": "{{RENAME}}",
+	"id": "maps-plus",
+	"name": "Maps+",
 	"version": "0.0.1",
 	"minAppVersion": "1.13.0",
-	"description": "TBD",
+	"description": "Adds a Bases map view with point markers, polygon areas, and routes.",
 	"author": "Tyler Carrol",
 	"authorUrl": "https://github.com/TylerCarrol",
 	"fundingUrl": "https://buymeacoffee.com/tylercarrol",
