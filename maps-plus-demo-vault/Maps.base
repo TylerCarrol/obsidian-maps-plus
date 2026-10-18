@@ -4,6 +4,7 @@ formulas:
   Overlap2: overlapLayer2 == true
   Overlap3: overlapLayer3 == true
   Overlap4: overlapLayer4 == true
+  AreaPointCount: area.length
 properties:
   file.name:
     displayName: Place
@@ -17,6 +18,8 @@ properties:
     displayName: Overlap layer 1 eligibility
   note.overlapLayer2:
     displayName: Overlap layer 2 eligibility
+  formula.AreaPointCount:
+    displayName: Area Point Count
 views:
   - type: maps-plus
     name: Examples
@@ -119,3 +122,28 @@ views:
     mapHeight: 800
     areaMaxPoints: "100"
     areaPointReductionMode: fixed
+  - type: table
+    name: Countries (Table)
+    filters:
+      and:
+        - file.hasTag("Place/Country")
+    order:
+      - file.name
+      - formula.AreaPointCount
+    summaries:
+      formula.AreaPointCount: Sum
+    coordinates: note.coordinates
+    markerColor: note.markerColor
+    areaCoordinates: note.area
+    areaFillColor: note.areaFillColor
+    areaStrokeColor: note.areaStrokeColor
+    routeCoordinates: note.route
+    routeColor: note.routeColor
+    defaultZoom: 2
+    editMode: false
+    coordinateSaveFormat: commaPairs
+    mapHeight: 800
+    areaMaxPoints: "100"
+    areaPointReductionMode: none
+    columnSize:
+      formula.AreaPointCount: 165

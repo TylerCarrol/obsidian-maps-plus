@@ -15,10 +15,10 @@
               "type": "bases",
               "state": {
                 "file": "Maps.base",
-                "viewName": "Overlaps"
+                "viewName": "Countries (Table)"
               },
               "pinned": true,
-              "icon": "lucide-map",
+              "icon": "lucide-table",
               "title": "Maps"
             }
           }
